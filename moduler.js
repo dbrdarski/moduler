@@ -13,7 +13,7 @@ var app = (function(){
     function App(){}
     var __module = (function(){
         var modules = {};
-        window.getDeps = function(deps, callerName){
+        var getDeps = function(deps, callerName){
             return deps.map(function(dep){
                 if( modules[dep].deps.indexOf(callerName) !== -1 ){
                     throw new Error("You have a circular dependency between '" + dep + "' and '" + callerName + "' module.");
@@ -44,3 +44,5 @@ var app = (function(){
     });
     return new App;
 }());
+
+module.exports = app;

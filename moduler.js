@@ -11,7 +11,11 @@ var app = (function(){
     }
 
     function App(){}
-    var __module = (function(){
+
+    var appInstance =  new App;
+
+    var store = function(){
+        var wrapper = {};
         var modules = {};
         var getDeps = function(deps, callerName){
             return deps.map(function(dep){
@@ -21,28 +25,48 @@ var app = (function(){
                 return modules[dep].init();
             });
         };
-        return function(name, depsOrModule, maybeModule){
-            var module = maybeModule || depsOrModule,
+        return {
+          getAll : wrapper,
+          getOrSet : function(nameOrObjectModule, depsOrModule, maybeModule){
+            var objectModule = typeof nameOrObjectModule === 'object';
+            var name = objectModule ? Object.keys(nameOrObjectModule)[0] : nameOrObjectModule;
+            var instance = this;
+            var module = maybeModule || depsOrModule || objectModule && nameOrObjectModule[name],
                 deps = maybeModule ? depsOrModule : [];
+            var resolve = once(function(){
+              var newInstance = Object.create(instance);
+              return module.bind(newInstance, newInstance).apply(newInstance, getDeps(deps, name));
+            });
+            if( module ){
+              Object.defineProperty(wrapper, name, {get : resolve});
+            }
             return module ? modules[name] = {
                 deps : deps,
-                init : once(function(){ return module.apply(null, getDeps(deps, name)); })
+                init : resolve
             } : modules[name];
-        };
-    }());
+        }
+      };
+    };
+
+    var __store = store();
+    var __module = __store.getOrSet;
+    var __modules = __store.getAll;
+
     var __run = function(deps, app){
-        return __module('app', deps, app).init()
+        return __module.call(appInstance, 'app', deps, app).init();
     };
     var __config = function(name, dep){
-        Object.defineProperty(App.prototype, name, { value : dep, writable : false });
+        Object.defineProperty(this, name, { value : dep, writable : false });
         return this;
     }
     Object.defineProperties(App.prototype, {
         run : { value : __run, writable : false },
-        module : { value : __module, writable : false },            
-        config : { value : __config, writable : false },            
+        module : { value : __module, writable : false },
+        modules : { value : __modules, writable : false },
+        config : { value : __config, writable : false },
+        store : { value : store, writable : false },
     });
-    return new App;
+    return appInstance;
 }());
 
 module.exports = app;

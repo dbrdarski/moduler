@@ -15,18 +15,20 @@ var app = (function(){
     var appInstance =  new App;
 
     var store = function(){
-        var wrapper = {};
-        var modules = {};
+        var storage = {};
+        var modules = function modules(){
+          Object.getOwnPropertyNames(modules).map(function(x){return modules[x]})
+        };
         var getDeps = function(deps, callerName){
             return deps.map(function(dep){
-                if( modules[dep].deps.indexOf(callerName) !== -1 ){
+                if( storage[dep].deps.indexOf(callerName) !== -1 ){
                     throw new Error("You have a circular dependency between '" + dep + "' and '" + callerName + "' module.");
                 }
-                return modules[dep].init();
+                return storage[dep].init();
             });
         };
         return {
-          getAll : wrapper,
+          getAll : modules,
           getOrSet : function(nameOrObjectModule, depsOrModule, maybeModule){
             var objectModule = typeof nameOrObjectModule === 'object';
             var name = objectModule ? Object.keys(nameOrObjectModule)[0] : nameOrObjectModule;
@@ -38,12 +40,12 @@ var app = (function(){
               return module.bind(newInstance, newInstance).apply(newInstance, getDeps(deps, name));
             });
             if( module ){
-              Object.defineProperty(wrapper, name, {get : resolve});
+              Object.defineProperty(modules, name, {get : resolve});
             }
-            return module ? modules[name] = {
+            return module ? storage[name] = {
                 deps : deps,
                 init : resolve
-            } : modules[name];
+            } : storage[name];
         }
       };
     };

@@ -17,7 +17,7 @@ var app = (function(){
     var store = function(){
         var storage = {};
         var modules = function modules(){
-          Object.getOwnPropertyNames(modules).map(function(x){return modules[x]})
+          return Object.getOwnPropertyNames(storage).map(function(x){return modules[x]})
         };
         var getDeps = function(deps, callerName){
             return deps.map(function(dep){
